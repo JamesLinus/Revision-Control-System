@@ -1,0 +1,3 @@
+If
+.I msg
+is omitted, it defaults to "*** empty log message ***".

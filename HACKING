@@ -1,0 +1,317 @@
+HACKING RCS                                             -*- org -*-
+
+This file is both a guide for newcomers and a todo list for oldstayers.
+It lives in the repo but is not included in the distribution.
+
+* next
+*** TODO more tests
+*** TODO features
+***** TODO single top-level command (working name: "grcs")
+***** TODO long options
+***** TODO (r)log formatted output
+******* --format FORMAT-STRING
+******* --limit N
+***** DONE extend ident(1) to recognize svn "fixed-width keyword syntax"
+      based on [[rh:247998][redhat #247998]]
+      see also [[bug-rcs:2011-09/msg00000.html][bug-rcs thread (2011-09-08)]]
+      see also [[http://svnbook.red-bean.com/en/1.5/svn-book.html#svn.advanced.props.special.keywords][svn book -- special keywords]]
+***** DONE add "self-same" (super-strict, same-user) ‘co -l’ mode
+      based on [[rh:107947][redhat #107947]]
+      see also [[bug-rcs:2011-09/msg00000.html][bug-rcs thread (2011-09-08)]]
+* entropy: [[http://hydra.nixos.org/jobset/gnu/rcs-master][hydra]] ([[http://hydra.nixos.org/project/gnu][gnu]])
+* coding standards
+*** indent -gnu -nut (sounds enticing, no?)
+*** no trailing whitespace
+*** untabify
+*** ChangeLog
+***** format: while hacking, ttn-style; on release, scrunch to GNU
+***** changes titled with suffix "; nfc." can be excluded
+*** tests/t???
+    :ELISP:
+    (pushnew '("rcs[^/]*/tests/t[0-9][0-9][0-9]$" . shell-script-mode)
+             auto-mode-alist
+             :test 'equal)
+    :END:
+*** bootstrap
+***** gnulib-tool must be somewhere on PATH
+***** do "sh autogen.sh"
+*** public non-‘master’ branches in the repo
+***** ‘a’ -- "anchor", "asis", "already", "argh-just-leave-me-alone"
+This branch is for what was already released.  It will never be rebased.
+Its tip will always have a commit title starting with "Release".
+***** q/TOPIC -- "questionably", "querulously"
+These are experimental, exploring the particular TOPIC.  They are intended
+to be ephemeral, undergoing rebase, amendment, and ultimately removal.
+*** copyright policy
+***** update every year, unconditionally
+***** (if (< 2 (- END BEGIN)) RANGE INDIVIDUAL)
+
+* gnulib utility
+*** why
+    We like gnulib, even though it is frightening at first.
+
+    Part of the fear is from ceding precise control to a system that
+    mutates w/o clear signals of stability.  Often, too, the mutation
+    involves growth, both in individual modules and in the connections
+    between them.  It is difficult to predict if an update will pull in
+    half (or more) of "libc".  (Excepting the last, all these points
+    could be said of RCS source itself, of course. ;-)
+
+    To assuage these fears, we monitor the gnulib "utility", i.e., the
+    ratio of explicitly requested modules to the currently-installed
+    set.  The higher this ratio, the more control we (imagine we) have.
+
+*** how
+    Unfortunately, gnulib-tool has no ‘--print-installation’ command.
+    Thus, we create (informational, not distributed) file [[file:.gnulib-utility][.gnulib-utility]]
+    as a side-effect of running [[file:autogen.sh][autogen.sh]].
+    :ELISP:
+    (defun org-dblock-write:insert-file (plist)
+      (insert-file-contents (plist-get plist :filename)))
+    :END:
+
+*** what (updated every so often and on release)
+    #+BEGIN: insert-file :filename ".gnulib-utility"
+    ;  _Exit
+    ;    alloca-opt
+    ;    chdir
+    ;    chdir-long
+    ;    chown
+    ;    cloexec
+    ;    close
+    ;  closedir
+    ;    concat-filename
+    ;    d-ino
+    ;  dirent
+    ;    dirfd
+    ;    dirname-lgpl
+    ;    dosname
+    ;  double-slash-root
+    ;    dup
+    ;    dup2
+    ;  errno
+    ;    error
+    ;    exitfail
+    ;  extensions
+    ;    fchdir
+    ;  fcntl
+    ;  fcntl-h
+    ;    fd-hook
+    ;    fdopendir
+    ;    filename
+    ;    filenamecat-lgpl
+    ;  findprog
+    ;    float
+    ;    fpieee
+    ;    fpucw
+    ;    frexp-nolibm
+    ;    frexpl-nolibm
+    ;  fstat
+    ;  getcwd
+    ;    getcwd-lgpl
+    ;    getdtablesize
+    ;  getlogin_r
+    ;    gettext-h
+    ;    gettimeofday
+    ;  git-version-gen
+    ;  hash-pjw
+    ;    havelib
+    ;    include_next
+    ;  inline
+    ;    intprops
+    ;    isnand-nolibm
+    ;    isnanf-nolibm
+    ;    isnanl-nolibm
+    ;  largefile
+    ;    lchown
+    ;    lock
+    ;    lstat
+    ;    malloc-posix
+    ;    math
+    ;    memchr
+    ;    mempcpy
+    ;    memrchr
+    ;    mkdir
+    ;  mkstemp
+    ;    msvc-inval
+    ;    msvc-nothrow
+    ;    multiarch
+    ;    nocrash
+    ;  obstack
+    ;  obstack-printf
+    ;  open
+    ;    openat
+    ;    openat-die
+    ;  opendir
+    ;    pathmax
+    ;    printf-frexp
+    ;    printf-frexpl
+    ;    printf-safe
+    ;  progname
+    ;    raise
+    ;  readlink
+    ;    realloc-posix
+    ;    rmdir
+    ;  same-inode
+    ;    save-cwd
+    ;  sigaction
+    ;  signal
+    ;    signal-h
+    ;    signbit
+    ;    sigprocmask
+    ;    size_max
+    ;  snippet/_Noreturn
+    ;    snippet/arg-nonnull
+    ;    snippet/c++defs
+    ;  snippet/unused-parameter
+    ;    snippet/warn-on-use
+    ;  snprintf
+    ;  sprintf-posix
+    ;  ssize_t
+    ;  stat
+    ;  stdarg
+    ;  stdbool
+    ;    stddef
+    ;  stdint
+    ;  stdio
+    ;  stdlib
+    ;    stpcpy
+    ;    strdup-posix
+    ;    strerror
+    ;    strerror-override
+    ;  string
+    ;  strsignal
+    ;  sys_stat
+    ;    sys_time
+    ;  sys_wait
+    ;    tempname
+    ;    threadlib
+    ;  time
+    ;  time_r
+    ;    tls
+    ;  tzset
+    ;  unistd
+    ;  unistd-safer
+    ;    unlink
+    ;    vasnprintf
+    ;    verify
+    ;  waitpid
+    ;    wchar
+    ;    xalloc
+    ;    xalloc-die
+    ;    xalloc-oversized
+    ;    xconcat-filename
+    ;    xsize
+
+    #+END:
+
+* possible future changes (see [[file:doc/rcs.texi::@node.*missing][manual]] for the more feasible ones)
+
+*** Bring back sccstorcs.
+
+*** Add a way to put only the interesting part of the filename into
+    the $Header keyword expansion.
+
+*** rcs should be able to fix minor mistakes in checkin dates and authors.
+
+*** Add a new option to rcs that behaves like -o, but that doesn't lose the
+    nonempty log messages, but instead merges them with the next revision if
+    it exists, perhaps with a 1-line header containing author, date, etc.
+
+*** Add options to allow arbitrary combinations of working file names
+    with RCS file names -- they shouldn't have to match.
+
+*** Add an option to rcs -o so that old log messages are not deleted if
+    the next undeleted revision exists, but are merely appended to the log
+    message of that revision.
+
+*** ci -k should be able to get keyword values from the first ‘$Log’ entry.
+
+* require a change to RCS file format
+
+*** Allow keyword expansion to be changed on a per-revision basis,
+    not on a per-file basis as now.  This would allow -ko to be used on
+    imported revisions, with the default -kkv otherwise.
+
+*** When two or more branches are merged, record all the ancestors
+    of the new revision.  The hard part of this is keeping track of all the
+    ancestors of a working file while it's checked out.
+
+*** Add loose locking, which is like non-strict but applies to all users,
+    not just the owner of the RCS file.
+
+*** Be able to store RCS files in compressed format.
+    Don't bother to use a .Z extension that would exceed file name length
+    limits; just look at the magic number.
+
+*** Add locker commentary, e.g. ‘co -l -m"checkout to fix merge bug" foo’
+    to tell others why you checked out ‘foo’.  Also record the time when the
+    revision was locked, and perhaps the working filename (if applicable).
+
+*** Let the user mark an RCS revision as deleted; checking out such a revision
+    would result in no working file.  Similarly, using ‘co -d’ with a date
+    either before the initial revision or after the file was marked deleted
+    should remove the working file.  For extra credit, extend the notion of
+    ‘deleted’ to include ‘renamed’.  RCS should support arbitrary combinations
+    of renaming and deletion, e.g. renaming A to B and B to A, checking in new
+    revisions to both files, and then renaming them back.
+
+*** Be able to check in an entire directory structure into a single RCS file.
+
+*** Use a better scheme for locking revisions; the current scheme requires
+    changing the RCS file just to lock or unlock a revision.  The new scheme
+    should coexist as well as possible with older versions of RCS, and should
+    avoid the rare NFS bugs mentioned in rcsedit.c.  E.g. if there's a
+    reliable lockd running, RCS should use it instead of relying on NFS.
+
+*** Add rcs options for changing keyword names, e.g. XConsortium instead of Id.
+
+*** Add a ‘$Description’ keyword; but this may be tricky,
+    since descriptions can contain newlines and $s.
+
+*** Add a ‘$Copyright’ keyword that expands to a copyright notice.
+
+*** Add frozen branches a la SCCS.
+    In general, be able to emulate all of SCCS, so that an SCCS-to-RCS program
+    can be practical.  For example, there should be an equivalent to the SCCS
+    prt command.
+
+*** Add support for distributed RCS,
+    where widely separated users cannot easily access each others' RCS files,
+    and must periodically distribute and reconcile new revisions.
+
+*** Be able to create empty branches.
+
+*** Be able to store just deltas from a read-only principal copy,
+    e.g. from source on CD-ROM.
+
+*** Improve RCS's method for storing binary files.
+    Although it is more efficient than SCCS's, the diff algorithm is still
+    line oriented, and often generates long output for minor changes to an
+    executable file.
+
+*** IWBN if RCS detected and handled binary files without human intervention,
+    switching expansion methods as needed from revision to revision.
+
+*** Determine automagically whether -ko or -kb should be the default.
+    Do this by inspecting the file's contents or name.  The magic should
+    be optional and user-programmable.
+
+*** Extend the ,v grammar so that keywords need not be in a fixed order.
+
+*** Internationalize messages.
+    This requires a change in RCS file format because of the ‘empty log
+    message’ and ‘checked in with -k’ hacks inside RCS files.
+
+* etc
+#+LINK: bug-rcs  https://lists.gnu.org/archive/html/bug-rcs/
+#+LINK: repo     http://git.savannah.gnu.org/cgit/rcs.git/commit/?id=
+#+LINK: lcov     http://hydra.nixos.org/build/%s/download/1/coverage/rcs-UNKNOWN/src/index.html
+#+LINK: rh       https://bugzilla.redhat.com/show_bug.cgi?id=
+#+LINK: dbts     http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=
+
+
+Copyright (C) 2010-2012 Thien-Thi Nguyen
+
+Copying and distribution of this file, with or without modification,
+are permitted provided the copyright notice and this notice are preserved.

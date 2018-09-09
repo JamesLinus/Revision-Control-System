@@ -1,0 +1,68 @@
+# t150 --- availability to shell, --version / --help
+#
+# Copyright (C) 2010-2012 Thien-Thi Nguyen
+#
+# This program is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of
+# the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. $srcdir/common
+split_std_out_err no
+set -e
+
+dispatch=grcs
+
+# Mine ‘subs’ and ‘executables’ from ../src/Makefile.
+grep -E '(subs|executables) = ' ../src/Makefile \
+    | sed 's/^[^:]*://;s/ = /="/;s/$/"/' \
+    > $wd/vars
+. $wd/vars
+
+norecurse="$dispatch $executables"
+programs="$norecurse $subs"
+avoid=`echo $norecurse | tr ' ' '|'`
+
+##
+# Check that each program can be found by the shell
+# (via the ‘type’ command), and that each program displays
+# reasonable output when invoked with ‘--version’ and ‘--help’.
+# Check output via dispatch for subs, too.
+##
+
+for p in $programs ; do
+    must 'type $p'
+
+    vcmd="$p --version"
+    vout=$wd/version-$p
+    must '$vcmd > $vout'
+    grep -F "$p (GNU RCS)" $vout || say_what $vcmd
+
+    hcmd="$p --help"
+    hout=$wd/help-$p
+    must '$hcmd > $hout'
+    grep -F 'Report bugs to' $hout || say_what $hcmd
+
+    eval "case $p in $avoid) continue ;; esac"
+
+    dvcmd="$dispatch $p --version"
+    dvout=$wd/d-version-$p
+    must '$dvcmd > $dvout'
+    grep -F "$p (GNU RCS)" $dvout || say_what $dvcmd
+
+    dhcmd="$dispatch $p --help"
+    dhout=$wd/d-help-$p
+    must '$dhcmd > $dhout'
+    grep -F "Usage: $p" $dhout || say_what $dhcmd
+    grep -F 'Report bugs to' $dhout || say_what $dhcmd
+done
+
+# t150 ends here

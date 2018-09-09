@@ -1,0 +1,1774 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename rcs.info
+@documentencoding UTF-8
+@include version.texi
+@settitle GNU RCS @value{VERSION}
+@syncodeindex vr cp
+@syncodeindex fn cp
+@c %**end of header
+
+@macro WFT
+Walter F.@tie{}Tichy
+@end macro
+
+@macro repo
+RCS file
+@end macro
+
+@set SUPER grcs
+@macro super
+@rcscommand{@value{SUPER}}
+@end macro
+
+@macro TODO
+@*@strong{TODO:}@w{ }
+@end macro
+
+@alias rcscommand = b
+
+@macro usage {name, required-args}
+@cindex @rcscommand{\name\} invocation
+@cindex invocation, @rcscommand{\name\}
+@example
+\name\ [options] \required-args\
+@end example
+@end macro
+
+@macro noVN {command}
+Note that @option{-V@var{n}} is @emph{not} a valid option for
+@rcscommand{\command\}, in contrast to most other RCS commands
+@end macro
+
+@copying
+This manual is for GNU RCS (version @value{VERSION}, @value{UPDATED}).
+
+Copyright @copyright{} 2010-2012 Thien-Thi Nguyen
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the appendix entitled
+``GNU Free Documentation License''.
+@end quotation
+@end copying
+
+@dircategory Version control
+@direntry
+* RCS: (rcs).                   GNU Revision Control System.
+@end direntry
+
+@titlepage
+@title GNU RCS
+@subtitle for version @value{VERSION}, @value{UPDATED}
+@author Thien-Thi Nguyen
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+
+@ifnottex
+@node Top
+@top GNU RCS
+
+@insertcopying
+@end ifnottex
+
+@menu
+* Overview::            General purpose and information.
+* Usage::               How to use RCS.
+
+* Still missing::       What RCS lacks, perhaps perpetually.
+* Reporting bugs::      Sending bug reports and feature suggestions.
+* GNU FDL::             Copying and sharing this documentation.
+* Index::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Overview
+* Credits::             Who did what, and when.
+* Concepts::            What is a revision?  How can RCS help?
+* Quick tour::          A hands-on introduction to using RCS.
+
+Usage
+* Common elements::
+* ci::
+* co::
+* ident::
+* merge::
+* rcs::
+* rcsclean::
+* rcsdiff::
+* rcsmerge::
+* rlog::
+
+Common elements
+* Revision options::
+* Date option::
+* Description option::
+* Substitution mode option::
+* Misc common options::
+* Environment::
+
+@end detailmenu
+@end menu
+
+@c ---------------------------------------------------------------------------
+@node Overview
+@chapter Overview
+
+@cindex overview
+@cindex comma-v file format
+@cindex license
+
+GNU RCS (Revision Control System) manages multiple revisions of
+files.  RCS can store, retrieve, log, identify, and merge revisions.
+It is useful for files that are revised frequently, e.g. programs,
+documentation, graphics, and papers.  It can handle text as well as
+binary files, although functionality is reduced for the latter.
+
+A normal installation includes the commands: @rcscommand{ci},
+@rcscommand{co}, @rcscommand{ident}, @rcscommand{merge},
+@rcscommand{rcs}, @rcscommand{rcsclean}, @rcscommand{rcsdiff},
+@rcscommand{rcsmerge} and @rcscommand{rlog} (@pxref{Usage}).
+These are small and fast programs (amenable to scripting) and indeed the
+distribution also includes the script @rcscommand{rcsfreeze} showing
+some of the possibilities.
+
+@cindex projects, related
+RCS works with versions stored on a single filesystem or machine,
+edited by one person at a time.  Other version control systems, such
+as Bazaar (@url{http:///www.gnu.org/software/bazaar}), CVS,
+Subversion, and Git, support distributed access in various ways.
+Which is more appropriate depends on the task at hand.
+
+@menu
+* Credits::             Who did what, and when.
+* Concepts::            What is a revision?  How can RCS help?
+* Quick tour::          A hands-on introduction to using RCS.
+@end menu
+
+@node Credits
+@section Credits
+@cindex history
+@cindex credits
+
+@cindex Tichy, Walter F.
+RCS was designed and built by @WFT{} of Purdue University.  RCS
+version 3 was released in 1983.
+
+Adam Hammer, Thomas Narten, and Daniel Trinkle of Purdue supported RCS
+through version 4.3, released in 1990.  Guy Harris of Sun contributed
+many porting fixes.  Paul Eggert of System Development Corporation
+contributed bug fixes and tuneups.  Jay Lepreau contributed 4.3BSD
+support.
+
+Paul Eggert of Twin Sun wrote the changes for RCS versions 5.5 and
+5.6 (1991).  Rich Braun of Kronos and Andy Glew of Intel contributed
+ideas for new options.  Bill Hahn of Stratus contributed ideas for
+setuid support.  Ideas for piece tables came from Joe Berkovitz of
+Stratus and @WFT{}.  Matt Cross of Stratus contributed test case
+ideas.  Adam Hammer of Purdue QAed.
+
+Paul Eggert wrote most of the changes for RCS 5.7.  K.@tie{}Richard
+Pixley of Cygnus Support contributed several bug fixes.  Robert
+Lupton of Princeton and Daniel Trinkle contributed ideas for
+@samp{$Name} expansion.  Brendan Kehoe of Cygnus Support suggested
+rlog's @option{-N} option.  Paul D.@tie{}Smith of Data General
+suggested improvements in option and error processing.  Adam Hammer
+of Purdue QAed.
+
+Thien-Thi Nguyen is responsibile for RCS 5.8.  He modernized the code
+base, build system, and manual pages, fixing some bugs on the way.  He
+added standard @option{--help}, @option{--version} processing, and wrote
+the documentation you are reading (gladly taking inspiration from the
+paper@footnote{Source (troff) and several output formats are available
+from the @url{http://www.gnu.org/software/rcs/, RCS homepage}.} and
+manpages originally written by @WFT{}).
+
+@node Concepts
+@section Concepts
+
+@subsection Interaction model
+@cindex interaction model
+
+@cindex interaction model
+@cindex model, interaction
+The interaction model is straightforward.  For each working file, you
+initialize its @repo{} once, then enter a cycle of
+checkout, modification, and checkin operations.  Along the
+way, you can tweak some of the @repo{}'s metadata, as well.
+All of this is done through RCS commands; you need not modify the
+@repo{} directly (and in fact you should probably avoid doing so lest
+RCS become confused).
+This model is somewhat analogous to using a library (of books).
+With a library, you sign up for a library card (initialize),
+then enter a cycle of taking a book home (checkout),
+enjoying it (NB: @strong{without} modification, one hopes),
+and returning it to the library (checkin).
+
+Furthermore, you can compare revisions in the @repo{}
+against each other, examine the user- (hopefully high) quality
+descriptions of the changes each revision embodies, merge
+selected revisions, and so forth.
+
+@subsection Working file
+
+@cindex working file, instantiation
+@cindex instantiating a working file
+RCS commands operate on one pair of files at a time.  The
+@dfn{working file} is what you normally view and edit (e.g., a
+file of C programming language source code named @file{a.c}).
+Because the working file's contents can be extracted from
+the @repo{} (called @dfn{instantiating a working file}),
+it can be safely deleted to regain some disk space.
+
+@subsection RCS file
+
+@cindex RCS file
+@cindex description of working file
+@cindex working file, description
+The @dfn{RCS file} is a separate file, conventionally placed in the
+subdirectory @file{RCS}, wherein RCS commands organize the initial and
+subsequent @dfn{revisions} of the working file, associating with each
+revision a unique revision number along with the remembered particulars
+of the checkin that produced it.  It also contains a @dfn{description}
+of the working file and various other metadata, described below.
+
+The @repo{} is also known (colloquially) as the ``comma-v file'',
+due to its name often ending in @file{,v} (e.g., @file{a.c,v}).
+
+@cindex revision number
+@cindex branch number
+@cindex number, revision
+@cindex number, branch
+A @dfn{revision number} is a branch number followed by a dot followed by
+an integer, and a @dfn{branch number} is an odd number of integers
+separated by dot.  A revision number with one dot (implying a branch
+number without any dots) is said to be @dfn{on the trunk}.  All integers
+are positive.  For example:
+
+@example
+1.1         -- revision number for initial checkin (typically);
+               branch number: 1
+
+9.4.1.42    -- more complicated (perhaps after much gnarly hacking);
+               branch number: 9.4.1
+
+333.333.333 -- not a valid revision number;
+               however, a perfectly valid branch number
+@end example
+
+@noindent
+The @dfn{branch point} of a non-trunk branch is the revision number
+formed by removing the branch's trailing integer.  To compute the
+@dfn{next higher} branch or revision number, add one to the trailing
+integer.  The highest-numbered revision on a branch is called the
+@dfn{tip} of the branch (or @dfn{branch tip}).  Continuing the example:
+
+@example
+1.1         -- on trunk; no branch point;
+               next higher branch number:   2
+               next higher revision number: 1.2
+
+9.4.1.42    -- not on trunk; branch point:  9.4
+               next higher branch number:   9.4.2
+               next higher revision number: 9.4.1.43
+
+333.333.333 -- not on trunk; branch point:  333.333
+               next higher branch number:   333.333.334
+               next higher revision number: 333.333.333.1
+@end example
+
+@noindent
+@cindex tree of revisions
+@cindex revisions, tree of
+@cindex symbolic names
+@cindex names, symbolic
+In addition to this ``tree'' of thus-linked revisions, the @repo{}
+keeps track of the @dfn{default branch}, i.e., the branch whose tip
+corresponds to the most recent checkin; as well as the @dfn{symbolic
+names}, a list of associations between a user-supplied (and presumably
+meaningful) symbol and an underlying branch or revision number.
+
+@cindex access control policy
+The @repo{} contains two pieces of information used to implement its
+@dfn{access control policy}.  The first is a list of usernames.  If
+non-empty, only those users listed can modify the @repo{} (via RCS
+commands).  The second is a list of @dfn{locks}, i.e., association
+between a username and a revision number.  If a lock
+@code{@var{username}:@var{revno}} exists, that means only @var{username}
+may modify @var{revno} (that is, do a checkin operation to deposit the
+next higher revision, or a higher revision number on the same branch as
+@var{revno}).
+
+@cindex compatability, RCS 2.x
+@cindex @samp{configure --enable-compat2}
+@strong{Compatability Note}:
+@repo{}s made with RCS 2.x may also contain @dfn{suffix
+information}.  If you run into such a file (unlikely, as that file
+format became obsolete in 1982), you will need to rebuild RCS with
+@samp{configure --enable-compat2} to be able to read it.  Note that RCS
+commands never write out suffix information, even with @samp{configure
+--enable-compat2}.
+
+@subsection Fundamental operations
+
+@cindex checkin
+The @dfn{checkin} operation records the contents of the working file in
+the @repo{}, assigning it a new (normally the next higher) revision
+number and recording the username, timestamp, @dfn{state} (a short
+symbol), and user-supplied @dfn{log message} (a textual description of
+the changes leading to that revision).  It uses @rcscommand{diff} to
+find the differences between the tip of the default branch and the
+working file, thereby writing the minimal amount of information needed
+to be able to recreate the contents of the previous tip.
+
+@cindex checkout
+The @dfn{checkout} operation identifies a specific revision from the
+@repo{} and either displays the content to standard output or
+instantiates a working file, overwriting any current instantiation
+with the selected revision.  In either case, the content may
+undergo @dfn{keyword expansion}, which replaces text of the
+form @samp{$Keyword$} with (possibly) different text comprising the
+keyword and its @dfn{value}, depending on the current keyword expansion
+mode (@pxref{Substitution mode option}).
+
+@subsection Keywords
+
+The keywords and their values are:
+
+@cindex keywords, table of
+@table @code
+@item Author
+The login name of the user who checked in the revision.
+
+@item Date
+The date and time the revision was checked in.
+May include an appended timezone offset.
+
+@item Header
+A standard header containing the absolute @repo{}name, the
+revision number, the date and time, the author, the state, and the
+locker (if locked).  May include an appended timezone offset.
+
+@item Id
+Same as @samp{Header}, except that only the
+basename appears (no directory components).
+
+@item Locker
+The login name of the user who locked the revision (empty if not locked).
+
+@item Log
+The log message supplied during checkin, preceded by a header containing
+the @repo{}name, the revision number, the author, and the date
+and time.  May include an appended timezone offset.
+
+Existing log messages are not replaced.
+Instead, the new log message is inserted after @samp{$Log:...$}.
+This is useful for accumulating a complete change log in a source file.
+
+Each inserted line is prefixed by the string that prefixes the
+@samp{$Log$} line.  For example, if the @samp{$Log$} line is
+
+@example
+// $Log: tan.cc $
+@end example
+
+@noindent
+then RCS prefixes each line of the log
+with @samp{// } (slash, slash, space).  This is useful for
+languages with comments that go to the end of the line.
+
+The convention for other languages is to use a @samp{ * }
+(space, asterisk, space) prefix inside a multiline comment.  For
+example, the initial log comment of a C program conventionally
+is of the following form:
+
+@example
+ /*
+  * $Log$
+  */
+@end example
+
+For backwards compatibility with older versions of RCS, if the log
+prefix is @samp{/*} or @samp{(*} surrounded by optional white space,
+inserted log lines contain a space instead of @samp{/} or @samp{(};
+however, this usage is obsolescent and should not be relied on.
+
+@item Name
+The symbolic name used to check out the revision, if any.
+For example, @samp{co -rJoe} generates @samp{$Name: Joe $}.
+Plain @rcscommand{co} generates just @samp{$Name: $}.
+
+@item RCSfile
+The basename of the @repo{}.
+
+@item Revision
+The revision number assigned to the revision.
+
+@item Source
+The absolute @repo{}name.
+
+@item State
+The state assigned to the revision with the @option{-s} option
+of @rcscommand{rcs} or @rcscommand{ci}.
+@end table
+
+@node Quick tour
+@section Quick tour
+
+This section complements the preceding section (@pxref{Concepts}),
+presenting a handful of RCS commands in quick succession.  For
+details on individual RCS commands, @xref{Usage}.
+
+Suppose you have a file @file{f.c} that you wish to put under
+control of RCS.  If you have not already done so, make an @file{RCS}
+directory with the command:
+
+@example
+mkdir RCS
+@end example
+
+@noindent
+Then invoke the checkin command:
+
+@example
+ci f.c
+@end example
+
+@noindent
+This command creates an @repo{} in directory @file{RCS}, stores
+@file{f.c} into it as revision 1.1, and deletes @file{f.c}.  It
+also asks you for a description.  The description should be a
+synopsis of the contents of the file.  All later checkin
+commands will ask you for a log entry, which should summarize
+the changes that you made.
+
+To get back the working file @file{f.c} in the previous example,
+use the checkout command:
+
+@example
+co f.c
+@end example
+
+@noindent
+This command extracts the latest revision from the @repo{}
+and writes it into @file{f.c}.  If you want to edit @file{f.c},
+you must lock it as you check it out, with the command:
+
+@example
+co -l f.c
+@end example
+
+@noindent
+You can now edit @file{f.c}.  Suppose after some editing you want to
+know what changes that you have made.  The command:
+
+@example
+rcsdiff f.c
+@end example
+
+@noindent
+tells you the difference between the most recently checked-in
+version and the working file.  You can check the file back in
+by invoking:
+
+@example
+ci f.c
+@end example
+
+@noindent
+This increments the revision number properly.
+If @rcscommand{ci} complains with the message:
+
+@example
+ci error: no lock set by your name
+@end example
+
+@noindent
+then you have tried to check in a file even though you did not
+lock it when you checked it out.  Of course, it is too late now
+to do the checkout with locking, because another checkout
+would overwrite your modifications.  Instead, invoke:
+
+@example
+rcs -l f.c
+@end example
+
+@noindent
+This command will lock the latest revision for you, unless
+somebody else got ahead of you already.  In this case, you'll
+have to negotiate with that person.
+
+Locking assures that you, and only you, can check in the next
+update, and avoids nasty problems if several people work on the
+same file.  Even if a revision is locked, it can still be
+checked out for reading, compiling, etc.  All that locking
+prevents is a checkin by anybody but the locker.
+
+If your @repo{} is private, i.e., if you are the only person
+who is going to deposit revisions into it, strict locking is
+not needed and you can turn it off.  If strict locking is
+turned off, the owner of the @repo{} need not have a lock
+for checkin; all others still do.  Turning strict locking off
+and on is done with the commands:
+
+@example
+rcs -U f.c    # disable strict locking
+rcs -L f.c    # enable strict locking
+@end example
+
+If you don't want to clutter your working directory with
+@repo{}s, create a subdirectory called @file{RCS} in your working
+directory, and move all your @repo{}s there.  RCS commands
+will look first into that directory to find needed files.  All
+the commands discussed above will still work, without any
+modification.  @xref{Common elements}.
+
+To avoid the deletion of the working file during checkin (in
+case you want to continue editing or compiling), invoke one of:
+
+@example
+ci -l f.c     # checkin + locked checkout
+ci -u f.c     # checkin + unlocked checkout
+@end example
+
+@noindent
+These commands check in @file{f.c} as usual, then perform an
+implicit checkout.  The first form also locks the checked in
+revision, the second one doesn't.  Thus, these options save you
+one checkout operation.  The first form is useful if you want
+to continue editing, the second one if you just want to read
+the file.  Both update the keyword substitutions in your
+working file @pxref{Concepts}.
+
+You can give @rcscommand{ci} the number you want assigned to a
+checked-in revision.  Assume all your revisions were numbered
+1.1, 1.2, 1.3, etc., and you would like to start release 2.
+Either of the commands:
+
+@example
+ci -r2 f.c
+ci -r2.1 f.c
+@end example
+
+@noindent
+assigns the number 2.1 to the new revision.  From then on,
+@rcscommand{ci} will number the subsequent revisions with 2.2,
+2.3, etc.  The corresponding @rcscommand{co} commands:
+
+@example
+co -r2 f.c
+co -r2.1 f.c
+@end example
+
+@noindent
+retrieve the latest revision numbered 2.x and the revision 2.1,
+respectively.  @rcscommand{co} without a revision number
+selects the latest revision on the trunk, i.e. the highest
+revision with a number consisting of two fields.  Numbers with
+more than two fields are needed for branches.  For example, to
+start a branch at revision 1.3, invoke:
+
+@example
+ci -r1.3.1 f.c
+@end example
+
+@noindent
+This command starts a branch numbered 1 at revision 1.3, and
+assigns the number 1.3.1.1 to the new revision.  Here is a diagram
+showing the new revision in relation to its branch and the trunk.
+
+@example
+1.1  --  1.2  --  1.3  --  1.4  --  1.5
+                   |
+                [1.3.1]  --  1.3.1.1
+@end example
+
+@noindent
+For more information about branches, @xref{Concepts}.
+
+
+@c ---------------------------------------------------------------------------
+@node Usage
+@chapter Usage
+
+This chapter describes how to invoke RCS commands, including common
+command-line elements, as well options specific to each command.
+Starting with RCS 5.9, the special command @super{} is the preferred
+@dfn{dispatch program} for some of the other commands.
+
+@menu
+* @value{SUPER}::
+* Common elements::
+* ci::
+* co::
+* ident::
+* merge::
+* rcs::
+* rcsclean::
+* rcsdiff::
+* rcsmerge::
+* rlog::
+@end menu
+
+@node @value{SUPER}
+@section Invoking @rcscommand{@value{SUPER}}
+
+@usage {@value{SUPER}, command [command-arg...]}
+
+@noindent
+The @super{} command is a @dfn{dispatch program} for some of the other
+commands.  Practically, that means that rather than invoking some
+command directly from the shell as @var{command}, you would instead
+invoke @super{}, specifying @var{command} as the first arg, followed
+by @var{command}-specific args.
+
+@example
+# standalone
+$ rlog @var{filename}
+
+# with the dispatch program
+$ @value{SUPER} rlog @var{filename}
+@end example
+
+Although the extra typing is a drawback, using @super{} confers
+some advantages:
+
+@table @asis
+@item aliases
+In the example above, we could have written
+@example
+$ @value{SUPER} log @var{filename}
+@end example
+@noindent
+where @samp{log} is an @dfn{alias} for @samp{rlog}.
+See @option{--commands} below.
+
+@item congruence with conteporary VCSes
+These days, version control systems almost universally use a dispatch
+program of some sort.  Combined with aliases, this can help you slide
+from RCS to another VCS (and back) more easily.
+@end table
+
+@noindent
+For these reasons, @super{} is here to stay.  Perhaps more importantly,
+commands as standalone programs will be withdrawn in a future RCS
+release.  The sooner you adapt scripts to use @super{} the better.
+
+Aside from @option{--help} and @option{--version}, @super{} also takes
+@option{--commands}, which displays the available commands (and their
+aliases) and exits.
+
+@node Common elements
+@section Common elements
+
+@cindex command help
+@cindex command version
+@noindent
+All RCS commands accept @option{--help} and @option{--version}.
+@xref{Command-Line Interfaces,,,standards,The GNU Coding Standards}.
+
+Aside from @option{--help} and @option{--version}, RCS commands take the
+form @samp{-@var{letter}[@var{arg}]}, i.e., a hyphen followed by a
+single letter, optionally followed by extra information.  The square
+braces mean that the extra information is optional.  (No square braces
+means that the extra information is required.)  In any case, when
+specified, the extra information @strong{must} abut the letter; there
+can be no intervening whitespace.
+
+@example
+co -u 1.4 foo   # wrong, space between -u and 1.4
+co -u1.4  foo   # ok
+@end example
+
+@noindent
+@cindex order of options and file names
+Furthermore, options must appear before file names (if any) on the
+command line.
+
+@example
+ident foo -q    # wrong, option after file name
+ident -q foo    # ok
+@end example
+
+@noindent
+@cindex pairing RCS and working files
+@cindex file names on the command-line
+Lastly, pairs of RCS and working files can be specified
+in three ways: (a) both are given, (b) only the working file is
+given, (c) only the @repo{} is given.  For (a), both
+RCS and working files may have arbitrary directory
+components; RCS commands pair them up intelligently.  For (b),
+RCS commands will look first into the directory @file{./RCS},
+if it exists, to find the associated @repo{}.
+
+@menu
+* Revision options::
+* Date option::
+* Description option::
+* Substitution mode option::
+* Log message option::
+* Misc common options::
+* Environment::
+@end menu
+
+@node Revision options
+@subsection Revision options
+
+@cindex command-line option to specify a revision
+@cindex specifying a revision
+@cindex revision, specifying
+
+As to be expected in a revision control system,
+many options are of the form @samp{-@var{flag}[@var{rev}]},
+where @var{flag} is a single letter (e.g., @samp{r}).
+If ommitted, @var{rev} defaults to the latest revision
+on the default branch.
+A revision can be specified in many ways:
+
+@table @asis
+@item @var{br}.@var{n}
+Straightforward dot-notation, where @var{br} specifies the branch.
+
+@item .@var{n}
+Like @var{br}.@var{n}, using the default branch.
+
+@item @var{br}
+Like @var{br}.@var{n}, using the a command-specific computation of
+@var{n}, given the current tip @var{i}.
+For @rcscommand{ci} (@pxref{ci}), @var{n} would be @code{@var{i} + 1},
+while for other commands @var{n} would be simply @var{i}.
+
+@item @var{name}
+This is the symbolic name of a revision, as assigned previously by a
+@command{ci -n} or @command{ci -N} command.
+
+@item @code{$}
+The command computes the effective revision by examining the values of
+keyword expansions in the working file.
+@end table
+
+@cindex specifying a range of revisions
+@cindex revision range, specifying
+@cindex range of revisions, specifying
+@noindent
+For commands that accept a range of revisions, the syntax is
+generally @code{@var{rev1}:@var{rev2}}, i.e., two revisions
+(specified as described above) separated by a colon.
+
+@node Date option
+@subsection Date option
+
+@cindex specifying a date
+@cindex specifying a time/date
+@cindex date, specifying
+@cindex time/date, specifying
+@cindex date formats
+@cindex time zone
+
+Some commands accept an option of the form @samp{-d@var{date}} to
+specify a @dfn{date}, an absolute point in time (to second resolution),
+expressed in a @dfn{date format}.  These also accept @samp{-z@var{zone}}
+to specify the timezone.  The special value @samp{LT} stands for the
+@dfn{local time zone}.  RCS recognizes many date formats and time
+zones.  For example, the following dates are equivalent if local time is
+January 11, 1990, 8pm Pacific Standard Time, eight hours west of
+Coordinated Universal Time (UTC):
+
+@example
+8:00 pm lt
+4:00 AM, Jan. 12, 1990           default is UTC
+1990-01-12 04:00:00+00           ISO 8601 (UTC)
+1990-01-11 20:00:00-08           ISO 8601 (local time)
+1990/01/12 04:00:00              traditional RCS format
+Thu Jan 11 20:00:00 1990 LT      output of ctime(3) + LT
+Thu Jan 11 20:00:00 PST 1990     output of date(1)
+Fri Jan 12 04:00:00 GMT 1990
+Thu, 11 Jan 1990 20:00:00 -0800  Internet RFC 822
+12-January-1990, 04:00 WET
+@end example
+
+@noindent
+Most fields in the date and time can be defaulted.  The default time
+zone is normally UTC, but this can be overridden by the @option{-z}
+option.  The other defaults are determined in the order year, month,
+day, hour, minute, and second (most to least significant).  At least one
+of these fields must be provided.  For omitted fields that are of higher
+significance than the highest provided field, the time zone's current
+values are assumed.  For all other omitted fields, the lowest possible
+values are assumed.  For example, without @option{-z}, the date
+@samp{20, 10:30} defaults to @samp{10:30:00 UTC} of the 20th of the UTC
+time zone's current month and year.  Note that for the shell, the
+date/time must be quoted if it contains spaces.
+
+RCS also accepts some other formats which specify only the date portion
+(omitting the time portion):
+
+@table @code
+@item @var{YYYY}-@var{DDD}
+@var{DDD} is the day of year, 1-366.
+
+@item @var{YYYY}-w@var{WW}-@var{D}
+@var{WW} is the ISO week number, 0-53 (actually, ISO
+week numbers are 1-53; week 0 is a GNU RCS extension);
+and @var{D} is the ISO day number, 1-7 (Monday through Sunday).
+@end table
+
+@node Description option
+@subsection Description option
+
+@cindex specifying description text
+@cindex description text, specifying
+
+Some commands accept an option of the form @samp{-t-@var{text}}
+or @samp{-t@var{file-name}}.  This option is to set or update the
+@repo{} description text.  In the first form, @var{text} is used
+directly, excluding the leading hyphen (@samp{-}) that distinguishes the
+two forms.  In the second form, the description text is taken from the
+contents of @var{file-name}.
+
+@node Substitution mode option
+@subsection Substitution mode option
+
+@cindex specifying substitution mode
+@cindex substitution mode, specifying
+
+Some commands accept an option of the form @option{-k@var{subst}}, used
+to control how keywords (@pxref{Concepts}) are expanded in the working
+file.  In the following table of @var{subst} values, the example keyword
+is @samp{Revision} and its value is @samp{5.13}.
+
+@table @code
+@item kv
+@cindex substitution mode, default
+@cindex keyword-value substitution mode
+Generate @samp{$Revision: 5.13 $} (dollar-sign, keyword, colon, space,
+value, space, dollar-sign).
+A locker's name is inserted in the value of the @code{Header},
+@code{Id} and @code{Locker} keyword strings only as a file is being locked,
+i.e., by @command{ci -l} and @command{co -l}.
+This is the default substitution mode.
+
+@item kvl
+@cindex keyword-value-locker substitution mode
+Like @option{-kkv}, except that a locker's name is always inserted
+if the given revision is currently locked.
+
+@item k
+@cindex keyword-only substitution mode
+Generate @samp{$Revision$} (dollar-sign, keyword, dollar-sign).
+This is useful when comparing different revisions of a file.  Log
+messages are inserted after @code{Log} keywords even if @option{-kk} is
+specified, since this tends to be more useful when merging changes.
+
+@item o
+@cindex old-keyword-value substitution mode
+Like @option{-kkv}, but use the old value present in the working file
+just before it was checked in.  This can be useful for file formats that
+cannot tolerate any changes to substrings that happen to take the form
+of keyword strings.
+
+@item b
+@cindex binary-old-keyword-value substitution mode
+Like @option{-ko}, but do all file i/o in binary mode.  This makes
+little difference on POSIX and Unix hosts, but on DOS-like hosts one
+should use @command{rcs -i -kb} to initialize an @repo{} intended to be
+used for binary files.  Also, on all hosts, @rcscommand{rcsmerge} normally
+refuses to merge files when @option{-kb} is in effect.
+
+@item v
+@cindex value-only substitution mode
+Generate @samp{5.13} (value only).  Further keyword substitution cannot
+be performed once the keyword names are removed, so this should be used
+with care.  Because of this danger of losing keywords, @option{-kv}
+cannot be combined with @option{-l}, and the owner write permission of the
+working file is turned off; to edit the file later, check it out again
+without @option{-kv}.
+@end table
+
+@node Log message option
+@subsection Log message option
+
+Both @command{ci} and @command{rcs} allow a log message
+to be specified with the @option{-m} option.
+@cindex empty log message
+@cindex log message, empty
+If the @var{msg} argument to this option is empty,
+RCS uses the default @samp{*** empty log message ***}.
+This particular message is handled specially
+(i.e., filtered out) by @command{rlog}.
+
+@node Misc common options
+@subsection Misc common options
+
+Other common options are @option{-I}, @option{-q}, @option{-s},
+@option{-T}, @option{-V}, @option{-w}, @option{-x}.
+
+@table @code
+@item -I
+@cindex interactive mode
+This option enables @dfn{interactive mode}.
+More precisely, it @strong{forces} interactive mode, whereby RCS
+commands believe that their standard input is a terminal, normally a
+precondition for displaying a prompt to receive input (such as a log
+message on checkin).
+The intention of @option{-I} is for scripting situations where standard
+input is actually not a terminal but you know beforehand (without
+prompting) that input is needed and you are ready to provide it on
+standard input anyway.
+
+@item -q
+@cindex quiet mode
+This option enables @dfn{quiet mode}.
+Commands work silently (unless there is an error condition),
+and suppress warnings and prompts.
+
+@item -s@var{state}
+@cindex specifying a state
+@cindex state, specifying
+Specify the state to be @var{state}.
+
+@item -T
+This option controls how commands timestamp the @repo{}.
+Normally, RCS commands set the @repo{}'s timestamp when modifying it
+in the ``natural'' way (without taking any particular care).
+With @option{-T}, on the other hand, the commands either preserve
+the timestamp (for standalone lock/unlock operations), or use the
+timestamp of the working file (for @rcscommand{ci}).
+
+This can be useful if the @repo{} is found in a makefile target's
+list of prerequisites (@pxref{Rule Syntax,,,make,The GNU Make Manual}),
+that is, if some target should be rebuilt if the @repo{} is newer
+than it.  In that case, you can do @samp{rcs -u -T}, for example, to
+unlock a revision in the @repo{} without triggering a recompilation.
+
+@item -V
+Behave like @option{--version}, i.e., display command version
+information and exit successfully.
+
+@item -V@var{n}
+@cindex emulation, previous RCS versions
+@cindex RCS version emulation
+@var{n} specifies the RCS (major) version to emulate.
+Valid values for @var{n} are: 3, 4, 5.
+
+@item -w@var{login}
+@cindex specifying author
+@cindex author, specifying
+Some commands accept an option of the form @samp{-w@var{login}}
+to specify the login name of the author of a revision, i.e.,
+``who'' is responsible.
+
+@item -x@var{suff}
+@cindex specifying a suffix list
+@cindex suffix list, specifying
+Specify @var{suff} as the slash-separated list of file name suffixes
+used to recognize an @repo{}.  The default value is @samp{,v/}, that
+is, first try with @samp{,v} then try with an empty suffix.
+
+This @dfn{basename search} occurs within (i.e., starting from the
+beginning) the larger @dfn{directory search} loop, which comprises two
+candidates: @file{d/RCS} and @file{d}, where @var{d} is the directory
+component of the working file name.  For example, given the working file
+@file{a.c} in the current directory, RCS tries, in order, these
+candidates:
+
+@example
+./RCS/a.c,v
+./RCS/a.c
+./a.c,v
+./a.c
+@end example
+
+Note that the last candidate is impossible (and is in fact discarded),
+because the working and RCS files cannot have the same name.
+@end table
+
+@node Environment
+@subsection Environment
+
+@cindex environment variables
+Various environment variables influence how RCS works.
+
+@defvr {Environment Variable} RCSINIT
+Another way to set common options is with the @samp{RCSINIT}
+environment variable.  This is a space-separated list of options.
+Use @samp{\} (backslash) to escape significant space.  For example:
+
+@example
+# Set the value; make it available to subsequent commands.
+RCSINIT="-q -x/,v -zLT"
+export RCSINIT
+
+# Use it (implicitly).
+rlog -L foo
+@end example
+
+@noindent
+This example, in Bourne shell syntax, arranges for RCS commands to
+operate as if each command-line had prepended @samp{-q -x/,v -zLT} to
+the rest of the command-line.  The effective command-line that
+@rcscommand{rlog} sees is thus @samp{-q -x/,v -zLT -L foo}.
+@end defvr
+
+@defvr {Environment Variable} RCS_MEM_LIMIT
+@cindex memory limit
+Normally, for speed, commands either memory map or copy into memory
+the @repo{} if its size is less than the @dfn{memory limit}, currently
+defaulting to 256 kilobytes.  Otherwise the commands fall back to using
+standard i/o routines.
+
+You can adjust the memory limit by setting the @samp{RCS_MEM_LIMIT}
+environment variable to a numeric value (measured in kilobytes).
+An empty value is silently ignored.
+@end defvr
+
+@defvr {Environment Variable} TMPDIR
+@defvrx {Environment Variable} TMP
+@defvrx {Environment Variable} TEMP
+Commands sometimes create temporary files, normally in
+a system-dependent directory, such as @file{/tmp}.
+You can override this directory by specifying another one as the value
+of one of the environment variables @code{TMPDIR}, @code{TMP}, or
+@code{TEMP} (checked in that order).
+@end defvr
+
+@defvr {Environment Variable} LOGNAME
+@defvrx {Environment Variable} USER
+Absent @option{-w@var{login}}, or when @var{login} is omitted
+(@pxref{Misc common options}), commands check environment variables
+@code{LOGNAME} and @code{USER} (in that order).  If neither of these
+are set, RCS queries the host for, and uses, your login.
+@end defvr
+
+@node ci
+@section Invoking @rcscommand{ci}
+
+@usage {ci, file ...}
+
+@noindent
+The @rcscommand{ci} command adds a revision to the @repo{} reflecting
+the current state of the working file.  This operation is also known as
+``checkin''.
+
+@table @code
+@item -f[@var{rev}]
+Force new entry, even if no content changed.
+
+@item -I[@var{rev}]
+@itemx -q[@var{rev}]
+@xref{Misc common options}.
+
+@item -i[@var{rev}]
+Initial checkin; error if the @repo{} already exists.
+
+@item -j[@var{rev}]
+Just checkin, don't initialize; error if the @repo{} does not exist.
+
+@item -k[@var{rev}]
+Compute revision from working file keywords.
+
+@item -r
+Release lock and delete working file.
+
+@item -r@var{rev}
+Do normal checkin.
+
+@item -l[@var{rev}]
+Like @option{-r}, but immediately checkout locked (@command{co -l}) afterwards.
+
+@item -u[@var{rev}]
+Like @option{-l}, but checkout unlocked (@command{co -u}).
+
+@item -M[@var{rev}]
+Reset working file mtime (relevant for @option{-l}, @option{-u}).
+@end table
+
+@noindent
+Multiple flags in @code{-@{fiIjklMqru@}} may be given, except for
+@option{-r}, @option{-l}, @option{-u}, which are mutually exclusive.
+For a fully specified revision of the
+form @code{@var{br}.@var{n}}, @var{n} must be greater
+than any existing on @var{br}, or @var{br} must be new.
+If @var{rev} is omitted, compute it from the last lock
+(@command{co -l}), perhaps starting a new branch.
+If there is no lock, use @code{@var{defbr}.(L+1)}.
+@xref{Revision options}.
+
+@table @code
+@item -d[@var{date}]
+@itemx -z@var{zone}
+@xref{Date option}.  If no @var{date} specified,
+use the working file modification time.
+
+@item -m[@var{msg}]
+Use @var{msg} as the log message.  @xref{Log message option}.
+
+@item -n@var{name}
+@itemx -N@var{name}
+Assign symbolic @var{name} to the entry.
+For @option{-n}, @var{name} must be new (no previous assignment).
+For @option{-N}, overwrite any previous assignment.
+
+@item -s@var{state}
+@xref{Misc common options}.  Set the state.
+
+@item -t-@var{text}
+@itemx -t@var{file-name}
+@xref{Description option}.
+
+@item -T
+Set the @repo{}'s modification time to the new revision's
+time if the former precedes the latter and there is a new
+revision; preserve the @repo{}'s modification time otherwise.
+
+@item -w@var{who}
+Use @var{who} as the author.
+
+@item -V
+@itemx -V@var{n}
+@itemx -x@var{suff}
+@xref{Misc common options}.
+@end table
+
+@node co
+@section Invoking @rcscommand{co}
+
+@usage {co, file ...}
+
+@noindent
+The @rcscommand{co} command retrieves a revision from the @repo{},
+writing a new working file.  This operation is also known as ``checkout''.
+
+@table @code
+@item -f[@var{rev}]
+Force overwrite of working file.
+
+@item -I[@var{rev}]
+@itemx -q[@var{rev}]
+@xref{Misc common options}.
+
+@item -p[@var{rev}]
+Write to stdout instead of the working file.
+
+@item -r[@var{rev}]
+Normal checkout.
+
+@item -l[@var{rev}]
+Like @option{-r}, but also lock.
+
+@item -u[@var{rev}]
+Like @option{-l}, but unlock.
+
+@item -M[@var{rev}]
+Reset working file mtime (relevant for @option{-l}, @option{-u}).
+@end table
+
+@noindent
+Multiple flags in @code{-@{fIlMpqru@}} may be given, except for
+@option{-r}, @option{-l}, @option{-u}, which are mutually exclusive.
+@xref{Revision options}.
+
+@table @code
+@item -k@var{subst}
+@xref{Substitution mode option}.
+
+@item -d@var{date}
+@itemx -z@var{zone}
+@xref{Date option}.
+Select latest before or on @var{date}.
+
+@item -j@var{joins}
+Merge using @var{joins}, a list of @code{@var{rev}:@var{rev}} pairs.
+@strong{NB}: This option is obsolete (@pxref{rcsmerge}).
+
+@item -s@var{state}
+@xref{Misc common options}.  Select matching state.
+
+@item -S
+Enable "self-same" mode.
+In this mode, the owner of a lock is unimportant, just that it exists.
+Effectively, this prevents you from checking out the same revision twice.
+
+@example
+$ whoami
+ttn
+
+$ co -l -f z
+RCS/z,v  -->  z
+revision 1.1 (locked)
+done
+
+$ co -S -l -f z
+RCS/z,v  -->  z
+co: RCS/z,v: Revision 1.1 is already locked by ttn.
+@end example
+
+@item -T
+Preserve the modification time on the @repo{} even if
+it changes because a lock is added or removed.
+
+@item -w@var{who}
+Select matching login @var{who}.
+
+@item -V
+@itemx -V@var{n}
+@itemx -x@var{suff}
+@xref{Misc common options}.
+@end table
+
+@node ident
+@section Invoking @rcscommand{ident}
+
+@usage {ident, [file ...]}
+
+@noindent
+If no @var{file} is specified, scan standard input.
+The @rcscommand{ident} command scans its input for keywords
+(@pxref{Concepts}), displaying to standard output what it finds.
+
+@table @code
+@item -q
+Normally, if no patterns are found for a file, @rcscommand{ident}
+emits a warning.  This option suppresses the warning.
+
+@item -V
+@xref{Misc common options}.  @noVN{ident}.
+@end table
+
+In addition to the normal keyword pattern, for Subversion 1.2
+(and later) compatability@footnote{The @dfn{fixed-length keyword syntax}
+is described in detail in
+@uref{http://svnbook.red-bean.com/en/1.5/svn-book.html#svn.advanced.props.special.keywords,
+,Version Control with Subversion}, chapter ``Advanced Topics'', section
+``Keyword Substitution''.},
+@rcscommand{ident} also recognizes patterns having one of the forms:
+
+@example
+$@var{keyword}:: @var{text} $
+;; two colons and space after keyword
+;; space before ending $
+
+$@var{keyword}:: @var{text}#$
+;; two colons and space after keyword
+;; hash before ending $
+@end example
+
+@node merge
+@section Invoking @rcscommand{merge}
+
+@usage {merge, receiving-sibling parent other-sibling}
+
+@noindent
+The @rcscommand{merge} command combines the differences between a
+the parent and the other sibling, and the differences between the
+parent and the receiving sibling.  It writes the result to the
+receiving sibling.
+
+@table @code
+@item -A
+@itemx -E
+@itemx -e
+Use @command{diff3} @option{-A}, @option{-E} (default), or @option{-e},
+respectively.
+
+@item -p
+Write to stdout instead of overwriting @var{receiving-sibling}.
+
+@item -q
+@xref{Misc common options}.  Suppress conflict warnings.
+
+@item -L@var{label}
+(up to three times) Specify the conflict labels for
+@var{receiving-sibling}, @var{parent} and @var{other-sibling},
+respectively.
+
+@item -V
+@xref{Misc common options}.  @noVN{merge}.
+@end table
+
+@node rcs
+@section Invoking @rcscommand{rcs}
+
+@usage {rcs, file ...}
+
+@noindent
+The @rcscommand{rcs} command performs various administrative operations
+on the @repo{}, depending on the options given.
+
+@table @code
+@item -i
+Create and initialize a new @repo{}.
+
+@item -L
+Set strict locking.
+
+@item -U
+Set non-strict locking.
+
+@item -M
+Don't send mail when breaking someone else's lock.
+
+@item -T
+Preserve the modification time on the @repo{}
+unless a revision is removed.
+
+@item -I
+@itemx -q
+@xref{Misc common options}.
+
+@item -a@var{logins}
+Append @var{logins} (comma-separated list of usernames) to access-list.
+
+@item -e[@var{logins}]
+Erase @var{logins} (comma-separated list of usernames) from access-list.
+If @var{logins} is omitted, clear the access-list.
+
+@item -A@var{file-name}
+Append access-list of @var{file-name} to current access-list.
+
+@item -b[@var{rev}]
+Set default branch to that of @var{rev} or
+highest branch on trunk if @var{rev} is omitted.
+
+@item -l[@var{rev}]
+Lock a revision.
+
+@item -u[@var{rev}]
+Unlock a revision.
+
+@item -c@var{string}
+Set comment leader to @var{string}.
+@strong{NB}: Don't use; obsolete.
+
+@item -k@var{subst}
+@xref{Substitution mode option}.
+
+@item -m@var{rev}:[@var{msg}]
+Replace log message with @var{msg}.  @xref{Log message option}.
+
+@item -n@var{name}[:[@var{rev}]]
+If @var{:rev} is omitted, delete symbolic @var{name}.
+Otherwise, associate @var{name} with @var{rev}; @var{name} must be new.
+
+@item -N@var{name}[:[@var{rev}]]
+Like @option{-n}, but overwrite any previous assignment.
+
+@item -o@var{range}
+Outdate revisions in @var{range}:
+
+@table @asis
+@item @var{rev}
+single revision
+
+@item @var{br}
+latest revision on branch @var{br}
+
+@item @code{@var{rev1}:@var{rev2}}
+@var{rev1} to @var{rev2} on same branch, inclusive
+
+@item @code{:@var{rev}}
+beginning of branch to @var{rev}
+
+@item @code{@var{rev}:}
+@var{rev} to end of branch
+@end table
+
+@item -s@var{state}[:@var{rev}]
+@xref{Misc common options}.  Set state.
+
+@item -t-@var{text}
+@itemx -t@var{file-name}
+@xref{Description option}.  Replace description.
+
+@item -V
+@itemx -V@var{n}
+@itemx -x@var{suff}
+@xref{Misc common options}.
+
+@item -z@var{zone}
+No effect; included for compatibility with other commands.
+@end table
+
+@node rcsclean
+@section Invoking @rcscommand{rcsclean}
+
+@usage {rcsclean, [file ...]}
+
+@noindent
+The @rcscommand{rcsclean} command removes working files that are not being
+worked on.  If given @option{-u}, it also unlocks and removes working files
+that are being worked on but have not changed.
+If no @var{file} is specified, operate on all the working files in the
+current directory.
+
+@table @code
+@item -r[@var{rev}]
+Specify revision.
+
+@item -u[@var{rev}]
+Unlock if is locked and no differences found.
+
+@item -n[@var{rev}]
+Dry run (no act, don't operate).
+
+@item -q[@var{rev}]
+@xref{Misc common options}.
+
+@item -k@var{subst}
+@xref{Substitution mode option}.
+
+@item -T
+Preserve the modification time on the @repo{} even
+it changes because a lock is removed.
+
+@item -V
+@itemx -V@var{n}
+@itemx -x@var{suff}
+@xref{Misc common options}.
+
+@item -z@var{zone}
+@xref{Date option}.
+@end table
+
+@node rcsdiff
+@section Invoking @rcscommand{rcsdiff}
+
+@usage {rcsdiff, file ...}
+
+@noindent
+The @rcscommand{rcsdiff} command runs @rcscommand{diff}
+to compare two revisions in an @repo{}.
+@xref{Invoking diff,,,diff,The GNU Diffutils Manaual}.
+
+@table @code
+@item -r@var{rev}
+(zero, one, or two times) Name a revision.
+If given two revisions (@samp{-r@var{rev1} -r@var{rev2}}),
+compare those revisions.
+If given only one revision (@samp{-r@var{rev}}),
+compare the working file with it.
+If given no revisions, compare the working file with the latest
+revision on the default branch.
+
+@item -k@var{subst}
+@xref{Substitution mode option}.
+
+@item -q
+@xref{Misc common options}.
+
+@item -V
+@itemx -V@var{n}
+@itemx -x@var{suff}
+@xref{Misc common options}.
+
+@item -z@var{zone}
+@xref{Date option}.
+@end table
+
+@noindent
+Additionally, the following options (and their argument, if any) are
+passed to the underlying @rcscommand{diff} command:
+
+@example
+-0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -B, -C, -D, -F, -H, -I,
+-L, -U, -W, -a, -b, -c, -d, -e, -f, -h, -i, -n, -p, -t, -u, -w, -y,
+long options (that start with "--")
+@end example
+
+@noindent
+(Not all of these options are meaningful.)
+
+@node rcsmerge
+@section Invoking @rcscommand{rcsmerge}
+
+@usage {rcsmerge, file}
+
+@noindent
+The @rcscommand{rcsmerge} command incorporates the changes between two
+revisions of an @repo{} into the corresponding working file.
+
+@table @code
+@item -p[@var{rev}]
+Write to stdout instead of overwriting the working file.
+
+@item -q[@var{rev}]
+@xref{Misc common options}.
+
+@item -r@var{rev}
+(one or two times) specify a revision.
+@end table
+
+@noindent
+One or two revisions must be specified
+(using @option{-p}, @option{-q}, @option{-r}).
+If only one is specified, the second revision defaults
+to the latest revision on the default branch.
+
+@table @code
+@item -k@var{subst}
+@xref{Substitution mode option}.
+
+@item -V
+@itemx -V@var{n}
+@itemx -x@var{suff}
+@xref{Misc common options}.
+
+@item -z@var{zone}
+@xref{Date option}.
+@end table
+
+@node rlog
+@section Invoking @rcscommand{rlog}
+
+@usage {rlog, file ...}
+
+@noindent
+The @rcscommand{rlog} command displays information about @repo{}s.
+
+@table @code
+@item -L
+Ignore @repo{}s with no locks set.
+
+@item -R
+Print only the name of the @repo{}.
+
+@item -h
+Print only the ``header'' information.
+
+@item -t
+Like @option{-h}, but also include the description.
+
+@item -N
+Omit symbolic names.
+
+@item -b
+Select the default branch.
+
+@item -d@var{dates}
+@xref{Date option}.  Select revisions based on timestamp,
+in the range @var{dates}, with spec:
+
+@table @asis
+@item @var{d}
+single revision @var{d} or earlier
+
+@item @code{@var{d1}<@var{d2}}
+@itemx @code{@var{d2}>@var{d1}}
+between @var{d1} and @var{d2}, exclusive
+
+@item @code{<@var{d}}
+@itemx @code{@var{d}>}
+before @var{d}
+
+@item @code{>@var{d}}
+@itemx @code{@var{d}<}
+after @var{d}
+@end table
+
+Instead of @samp{<} or @samp{>}, you can use @samp{<=} or @samp{>=},
+respectively, to specify inclusive ranges.
+@var{dates} may also be a list of semicolon-separated specs.
+
+@item -l[@var{who}]
+Select revisions locked by @var{who} (comma-separated list of usernames)
+only, or by anyone if @var{who} is omitted.
+
+@item -r[@var{revs}]
+Select revisions in @var{revs}, a comma-separated list of
+range specs, one of: @var{rev}, @code{@var{rev}:},
+@code{:@var{rev}}, @code{@var{rev1}:@var{rev2}}.
+
+@item -s@var{states}
+@xref{Misc common options}.
+@var{states} can also be a comma-separated list of states.
+Select revisions with specified state(s).
+
+@item -w[@var{who}]
+Select revisions checked in by @var{who} (comma-separated list of usernames),
+or by the user if @var{who} is omitted.
+
+@item -V
+@itemx -V@var{n}
+@itemx -x@var{suff}
+@xref{Misc common options}.
+
+@item -z@var{zone}
+@xref{Date option}.
+
+@item -q
+No effect, included for consistency with other commands.
+@end table
+
+
+@c ---------------------------------------------------------------------------
+@node Still missing
+@chapter Still missing
+@cindex features, still missing
+
+RCS is still missing some features.  The following is an unordered list
+of ``to-do musings'' kept by the RCS maintainers.  If you would like to
+hack on an item, @xref{Reporting bugs}.
+
+@itemize
+
+@item Add an option to @rcscommand{rcsmerge} so that it can use an arbitrary
+program to do the 3-way merge, instead of the default @rcscommand{merge}.
+Likewise for @rcscommand{rcsdiff} and @rcscommand{diff}.  It should be
+possible to pass arbitrary options to these programs, and to the subsidiary
+@rcscommand{co} invocations.
+
+@item Add format options for finer control over the output of
+@rcscommand{ident} and @rcscommand{rlog}.  E.g. there should be an easy way
+for rlog to output lines like @samp{src/main.c 2.4 wft}, one for each locked
+revision.  @rcscommand{rlog} options should have three orthogonal types:
+selecting files, selecting revisions, and selecting rlog format.
+
+@item Add format options for finer control over the output of keyword
+strings.  E.g. there should be some way to prepend @samp{@@(#)}, and
+there should be some way to change @samp{$} to some other character to
+disable further substitution.  These options should make the resulting
+files uneditable, like @samp{-kv}.
+
+@item Add long options, e.g. @option{--keyword-substitution}.
+Unfortunately RCS's option syntax is incompatible with getopt.  Perhaps
+the best way is to overload @rcscommand{rcs}, e.g., @samp{rcs diff
+--keyword-substitution=old file} instead of @samp{rcsdiff -ko file}.
+
+@item @command{rlog -rM:N} should work even if @var{M} and @var{N} have
+different numbers of fields, so long as @var{M} is an ancestor of
+@var{N} or vice versa.
+
+@item @rcscommand{rcs} should evaluate options in order;
+this allows @command{rcs -oS -nS}.
+
+@item Be able to redo your most recent checkin with minor changes.
+
+@item @command{co -u} shouldn't complain about a @samp{+w} working
+file if contents don't change.
+
+@item Add a @samp{-} option to take the list of file names from
+standard input.  Perhaps the file names should be null-terminated, not
+newline-terminated, so that those that contain newlines are handled
+properly.
+
+@item Permit multiple option--filename pairs,
+e.g., @command{co -r1.4 a -r1.5 b}.
+
+@item Add an option to break a symbolic link to an @repo{},
+instead of breaking the hard link that it points to.
+
+@item Add ways to specify the earliest revision, the most recent
+revision, the earliest or latest revision on a particular branch, and
+the parent or child of some other revision.
+
+@item If a user has multiple locks, perhaps @rcscommand{ci} should fall
+back on the method of @command{ci -k} to figure out which revision to use.
+
+@item Add an option to @rcscommand{rcsclean} to clean directories recursively.
+
+@item Write an @rcscommand{rcsck} program that repairs corrupted @repo{}s,
+much as fsck repairs corrupted file systems.  For example, it should
+remove stale lock files.
+
+@item Update the date parser to use the more modern @file{getdate.y}
+by Bellovin, Salz, and Berets, or the even more modern @code{getdate} by
+Moraes.  None of these getdate implementations are as robust as RCS's
+old warhorse in avoiding problems like arithmetic overflow, so they'll
+have to be fixed first.  (Perhaps we can use gnulib module @code{getdate}.)
+
+@item Break up the code into a library so that it's easier to write
+new programs that manipulate @repo{}s, and so that useless code is
+removed from the existing programs.  For example, the @rcscommand{rcs}
+command contains unnecessary keyword substitution baggage, and the
+@rcscommand{merge} command can be greatly pruned.
+
+@item Make it easier to use your favorite text editor to edit log
+messages, etc., instead of having to type them in irretrievably at the
+terminal.
+
+@item Let the user specify a search path for default branches,
+e.g., to use @var{L} as the default branch if it works, and @var{M}
+otherwise.  Let the user require that at least one entry in the
+search path works.  Let the user say that later entries in the
+search path are read only, i.e. one cannot check in changes to them.
+This should be an option settable by @samp{RCSINIT}.
+
+@item Add a way for a user to see which revisions affected which lines.
+
+@item Have @command{rlog -nN F} print just the revision number that
+@var{N} translates to.  E.g., @command{rlog -nB. F} would print the highest
+revision on the branch B.  Use this to add an option @option{-bB} to
+rcsbranch, to freeze the named branch.  This should interact well with
+default branches.
+
+@item Add a @rcscommand{co} option that prints the revision number before
+each line, as SCCS's @command{get -m} does.
+[I implemented this for Emacs 22 as a subroutine
+of @code{vc-annotate}, q.v.  ---ttn]
+
+@end itemize
+
+
+@c ---------------------------------------------------------------------------
+@node Reporting bugs
+@chapter Reporting bugs
+
+@cindex bug reporting
+@cindex problems
+@cindex reporting bugs
+
+To report bugs or suggest enhancements for GNU RCS, please
+visit its homepage (@url{http://www.gnu.org/software/rcs/})
+to find directions on how to ``file a bug report'' online,
+or send electronic mail to @email{help-rcs@@gnu.org}.
+(If you use the web interface, you don't need to also send email,
+since that is done automatically.)
+
+@cindex checklist for bug reports
+For bug reports, please include enough information for the maintainers
+to reproduce the problem.  Generally speaking, that means:
+
+@itemize @bullet
+@item The RCS version, command(s) and manual section(s) involved.
+@item Hardware and operating system names and versions.
+@item The contents of any input files necessary to reproduce the bug.
+@item The expected behavior and/or output.
+@item A description of the problem and samples of any erroneous output.
+@item Options you gave to @command{configure} other than specifying
+      installation directories.
+@item Anything else that you think would be helpful.
+@end itemize
+
+When in doubt whether something is needed or not, include it.  It's
+better to include too much than to leave out something important.
+
+@cindex patches, contributing
+Patches are welcome; if possible, please make them with
+@samp{git format-patch} and
+include @file{ChangeLog} entries (@pxref{Change Log,,, emacs, The GNU
+Emacs Manual}).  Please follow the existing coding style.
+
+
+@c ---------------------------------------------------------------------------
+@node GNU FDL
+@appendix GNU Free Documentation License
+
+@include fdl.texi
+
+
+@c ---------------------------------------------------------------------------
+@node Index
+@unnumbered Index
+
+@printindex cp
+
+@bye

@@ -1,0 +1,39 @@
+.SH ENVIRONMENT
+.TP
+.B \s-1RCSINIT\s0
+Options prepended to the argument list, separated by spaces.
+A backslash escapes spaces within an option.
+The
+.B \s-1RCSINIT\s0
+options are prepended to the argument lists of most \*r commands.
+Useful
+.B \s-1RCSINIT\s0
+options include
+.BR \-q ,
+.BR \-V ,
+.BR \-x ,
+and
+.BR \-z .
+.TP
+.B \s-1RCS_MEM_LIMIT\s0
+An integer
+.IR lim ,
+measured in kilobytes, specifying the threshold under
+which commands will try to use memory-based operations for
+processing the \*o.
+(For \*os of size
+.I lim
+kilobytes or greater,
+RCS will use the slower standard input/output routines.)
+Default value is 256.
+.TP
+.B \s-1TMPDIR\s0
+Name of the temporary directory.
+If not set, the environment variables
+.B \s-1TMP\s0
+and
+.B \s-1TEMP\s0
+are inspected instead and the first value found is taken;
+if none of them are set,
+a host-dependent default is used, typically
+.BR /tmp .

@@ -1,0 +1,86 @@
+#!/bin/sh
+# extract-help
+#
+# Copyright (C) 2010-2012 Thien-Thi Nguyen
+#
+# This file is part of GNU RCS.
+#
+# GNU RCS is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GNU RCS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##
+# Usage: extract-help [-o OUTFILE] INFILE
+#
+# Look for a C comment in INFILE of the form:
+#  /*:help
+#  TEXT
+#  */
+# and write TEXT to OUTFILE (or stdout if OUTFILE not specified),
+# formatted as a C string definition, with proper #include prefixed.
+##
+
+version='1.0'
+
+set -e
+
+usage ()
+{
+    sed '/^##/,/^##/!d;/^##/d;s/^# //g;s/^#$//g' $0
+}
+
+showversion ()
+{
+    echo "extract-help (GNU RCS) $version"
+}
+
+if [ x"$1" = x--help ] ; then showversion ; echo ; usage ; exit 0 ; fi
+if [ x"$1" = x--version ] ; then showversion ; exit 0 ; fi
+
+missing ()
+{
+    echo >&2 "ERROR: Missing argument, try --help"
+    exit 1
+}
+
+if [ x"$1" = x-o ] ; then
+    shift
+    test -z "$1" && missing
+    out="$1"
+    shift
+fi
+
+if [ x"$1" = x ] ; then
+    echo >&2 "ERROR: Missing arg: INFILE (try --help)"
+    exit 1
+else
+    in="$1"
+    if [ -r "$in" ] ; then : ; else
+        echo >&2 "ERROR: Cannot read input file: $in"
+        exit 1
+    fi
+    vprefix=`echo $in | sed 's/\.c$/_/;s|.*/||'`
+fi
+
+test -z "$out" || exec 1>"$out"
+echo '#include "gnu-h-v.h"'
+<"$in" sed '
+  s/^.../char const '$vprefix'blurb[] = "/
+  s/$/";/
+  q
+'
+echo 'static char const' $vprefix'help[] = ""'
+<"$in" \
+    sed '/^..:help$/,/^*./!d' \
+    | sed '1d;$d;s/"/\\"/g;s/^/"/;s/$/\\n"/'
+echo ';'
+
+# extract-help

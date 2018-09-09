@@ -1,0 +1,15 @@
+RCS was designed and built by Walter F. Tichy of Purdue University.
+RCS version 3 was released in 1983.
+
+Adam Hammer, Thomas Narten, and Daniel Trinkle of Purdue supported RCS
+through version 4.3, released in 1990.  Guy Harris of Sun contributed
+many porting fixes.  Paul Eggert of System Development Corporation
+contributed bug fixes and tuneups.  Jay Lepreau contributed 4.3BSD
+support.
+
+Paul Eggert wrote the changes for RCS versions 5.5 and 5.6 (1991).
+
+Paul Eggert wrote most of the changes for RCS 5.7 (1995).
+K. Richard Pixley of Cygnus Support contributed several bug fixes.
+
+Thien-Thi Nguyen wrote the changes for RCS version 5.8.

@@ -1,0 +1,86 @@
+README-alpha for RCS
+
+
+* What?  RCS is alpha?  RCS, almost older than GNU itself, is alpha?!
+
+  Well yes.  This RCS release includes a number of possibly-destabilizing
+  changes in an attempt to modernize its build system and code base, in
+  addition to the usual bugfixes and feature enhancements.  See the
+  ChangeLog files for details on the simplifying assumptions, possibly
+  misguided finessing and outright source-code thuggery involved, the
+  result of which is that there might be breakage for old or extremely
+  non-standard platforms.  Testing has been limited to GNU/Linux (Debian
+  5.0 "Lenny"), which is by no means cutting edge, but is indeed a far cry
+  from the platforms listed in README, reproduced here:
+
+        AIX 3.2
+        GCC 2.5.8 Intel x86
+        HP/Apollo DomainOS
+        HP-UX 8.07 and 9.*
+        Solaris 2.4
+        SCO Unix V.3.2
+        Ultrix
+
+  Other likely-to-suffer platforms are DOS and OS/2.
+
+  The good news is that we now have in place a policy to announce any
+  planned drop in support one or two releases before doing it.
+
+  The bad news is that here is the announcement: We hereby plan to drop
+  support for non-POSIXizable (via gnulib) platforms starting in RCS 6.x.
+
+  The good news is that RCS 6.x might take a while to release.
+
+  The bad news is that it might not.
+
+  The good news is that gnulib grows and grows...
+
+  Confused?  Maybe good/bad is not such an important distinction.
+  Likewise, lucky/unlucky...
+
+
+* The configure script told me that my platform might be desupported in
+  the future.  What to do?
+
+  You are very lucky!  As a courageous builder of pretest software you
+  are now empowered to clue in the RCS maintainer on the desirability of
+  continued support for your platform, thereby quietening your fears and
+  increasing the connectedness of the RCS-using community.
+
+  You do this by mailing the warning text output by the configure script
+  to bug-rcs@gnu.org, with a suitably detailed (i.e., optional) explanation
+  of your platform, including why it should (or shouldn't) be supported.
+
+
+* The configure script told me to see this file, and stopped.  Why?
+
+  Well, you're doing a good job so far!  To shut up the configure script,
+  and get it to do what you want it to do, (re-)run it with the variable
+  RCS_PRETEST set to "acknowledged", like so:
+
+  ./configure [other-options] RCS_PRETEST=acknowledged
+
+  Then, while the RCS is building, please read the rest of this file and
+  send feedback to bug-rcs@gnu.org to help us move more quickly towards a
+  real release.  Also, look for "Question forpretesters" in NEWS.
+
+
+* So what's holding up the real release?
+
+  Aside from the platforms dithering mentioned above, there are still some
+  uncertainties that you can help clear up.  Note that your answers to the
+  following questions are also valid after the real release.  However, you
+  have come this far, why wait any longer?
+
+  - If you find a functionality or documentation bug, please report it!
+
+  - If the (info) documentation is unclear or poorly organized, how would
+    you improve it?  Long-term, the manpages will be reduced to pointers
+    to the info documentation, so focus your attention there.
+
+  - Are there any interesting scenarios you'd like to see tested?  It
+    would be best if you could suggest a self-contained test case to add
+    to the (just budding) test suite, but that is not critical.
+
+  - Are there any interesting features you'd like to see added?  See file
+    HACKING and (info "(rcs) Still missing"), for current thoughts.

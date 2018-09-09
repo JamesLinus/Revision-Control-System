@@ -1,0 +1,245 @@
+Welcome!
+========
+
+This directory contains sources and documentation for GNU RCS.
+
+GNU RCS (Revision Control System) manages multiple revisions of files.
+RCS can store, retrieve, log, identify, and merge revisions.
+It is useful for files that are revised frequently, e.g.,
+programs, documentation, graphics, and papers.
+
+See the following files and directories for more information.
+
+ AUTHORS - authorship information
+ COPYING - copying conditions
+ INSTALL - generic installation instructions
+ NEWS    - recent changes
+ doc/    - documentation in info format, plus source (texinfo)
+ lib/    - portability code, from gnulib
+ m4/     - configure script infrastructure, from gnulib
+ man/    - manual page entries, plus source
+ src/    - source code for programs
+
+
+
+Prerequisites and compatibility issues
+======================================
+
+RCS requires a diff that supports the -n option.
+Get GNU diffutils (version 2.7 or later) if your diff lacks -n.
+
+RCS works best with a diff that supports -a and -L,
+and a diff3 that supports -A, -E and -m.
+GNU diffutils supports these options.
+
+RCS version 5 reads RCS files written by any RCS version released
+since 1982.  It also writes RCS files that these older versions of
+RCS can read, unless you use one of the following new features:
+
+- checkin dates after 1999-12-31
+- checking in non-text files
+- identifiers containing ‘.’ or non-ASCII bytes, or starting with a digit
+- ‘rcs -bX’, where X is nonempty
+- ‘rcs -kX’, where X is not ‘kv’
+- RCS files that exceed hardcoded limits in older RCS versions
+
+A working file written by RCS 5.5 or later contains four-digit years in its
+keyword strings.  If you check out a working file with RCS 5.5 or later, an
+older RCS version's ‘ci -k’ may insist on two-digit years.  Similarly, a
+working file written with ‘-zZONE’ contains times in its keyword strings
+that older ‘ci -k’s may not understand.  Work around this with ‘co -V4 -z’,
+or edit the working file.
+
+RCS should run on any host that conforms to the POSIX 1003.1-1990 standard.
+It also runs on a wide variety of non-POSIX hosts.
+
+
+
+Configuration and installation
+==============================
+
+See INSTALL for general instructions on configuring and building RCS.
+Use ‘configure --help’ to see a list of options for customizing the
+installation directories (.e.g, --prefix).
+
+* Another option is ‘--enable-compat2’.  It enables reading RCS 2.x file
+  formats.  Most likely you can safely ignore this (that file format became
+  obsolete in 1982).  However, if you do indeed find a version 2 file around,
+  you can migrate the file to a recent format as follows:
+
+     Suppose the working file was ‘f.c’; rename the RCS file ‘f.c.v’ to
+     ‘f.c,v’, and the RCS file ‘f.v’ to ‘f.c,v’.  Thus suffixes are no
+     longer dropped and RCS files end in ‘,v’ rather than ‘.v’.  After
+     all version 2 RCS files have been updated with new versions of ci
+     or rcs, you can remake RCS with --enable-compat2=no.
+
+  !!! NB: This option (and 2.x compatability) will be removed in GNU RCS 6.x.
+
+* Another option is ‘--with-mailer=PROG’.  This specifies that PROG (an
+  absolute filename if not findable on PATH) should be used to send mail to
+  the original locker when a lock is broken.  PROG will be called with one
+  argument, the recipient, and its standard input will be:
+
+    Subject: Broken lock on <FILENAME>
+
+    <REASON>
+
+  That is, the first line is the subject, followed by an empty line, followed
+  by the message body.  Omitting this option disables sending mail.
+
+* For speed, RCS uses the ‘mmap’ system call if available.  Unfortunately,
+  many mmap implementations are broken.  For instance, mmap does not work
+  properly in HP-UX 8 or 9, or in Solaris 2.4, without kernel patches.  We
+  don't know details about the bugs, so we can't test for them automatically.
+  You can build RCS without mmap by specifying ‘--disable-mmap’ to the
+  configure script.
+
+* By default, RCS supports running its commands setuid, using ‘seteuid’.
+
+  If your ‘seteuid’ (typically on older BSDs, e.g., SunOS 3.5) does not let
+  you switch back and forth between any pair of users as specified in POSIX
+  1003.1a Draft 5, you should specify ‘--enable-suid=setreuid’, instead.
+  (One must be root to test this reliably, so the configure script just
+  checks availability.)
+
+  To build RCS without setuid support, specify ‘--disable-suid’.
+
+  !!! NB: Support for setuid operation will be removed in GNU RCS 6.x.
+
+  !!! NB: Don't run RCS setuid under AIX 3.2 if you use NFS, since it's badly
+  broken.  To see the AIX 3.2 bug, run the following program setuid X where
+  the NFS file "abc" already exists, owned by X, permission -rw-r--r--, and
+  where the invoker is not X.
+
+    #include <stdio.h>
+
+    int
+    main ()
+    {
+      FILE *f = fopen ("abc", "w");
+
+      setuid (getuid ());
+      fputc ('\n', f);
+      if (fclose (f) != 0)
+        perror ("fclose");
+    }
+
+  The program fails with "fclose: Permission denied".
+
+If your system type is in the following list, look for the
+corresponding strings in the notes below before configuring.
+
+  system type         - identifiers
+  ------------------------------------
+  AIX 3.2             - --prefix=/usr
+  GCC 2.5.8 Intel x86 - CFLAGS
+  HP-UX 8.07 and 9.*  - MMAP_SIGNAL
+  Solaris 2.4         - MMAP_SIGNAL
+  SCO Unix V.3.2      - bad_NFS_rename
+  Ultrix              - HAVE_SETEUID
+
+If the configure script tells you that your platform might be desupported in
+the future, then consider yourself very lucky!  As a courageous builder of
+free software you are now empowered to clue in the RCS maintainer on the
+desirability of continued support for your platform, thereby quietening your
+fears and increasing the connectedness of the RCS-using community.
+
+You do this by mailing the warning text output by the configure script
+to bug-rcs@gnu.org, with a suitably detailed (i.e., optional) explanation
+of your platform, including why it should (or shouldn't) be supported.
+
+If building succeeds, do "make check" (optional) and "make install".
+To check the installation, do "make installcheck".
+
+AIX NOTE:
+Do not configure with ‘--prefix=/’ or ‘--prefix=/usr’ in AIX.
+An AIX boot shell script (/etc/rc.boot4 in AIX 3.2) invokes ‘merge’,
+meaning /etc/merge, and fails if RCS merge is installed in /bin or /usr/bin.
+IBM says that installing new programs into /usr/bin is a customer error (!).
+
+
+
+Configuration environment
+=========================
+
+The configuration procedure normally inspects the current host to determine
+how RCS is to be built.  The variables listed in this section override this
+default.  They should be specified on the configure script command-line,
+like so:
+
+$ ./configure [--prefix and other options...] VAR=VALUE VAR=VALUE
+
+CC is the name of your C compiler.
+
+CPPFLAGS are C preprocessor options.
+
+CFLAGS are C compiler options that do not affect correctness,
+typically options that affect optimization or debugging.
+Omit -O if your compiler's optimizer is not trustworthy (e.g. GCC 2.5.8 x86).
+If your ancient BSD compiler has the -R option, -R can improve performance by
+making all initialized data read-only (not just string literals);
+modern compilers don't need this, since they have ‘const’.
+
+DIFF is the name of your diff program.
+It's normally best to use GNU diffutils.
+On some versions of Unix, the standard diff does not support RCS
+and you must instead use diffutils, or something like /usr/lib/rdiff.
+
+DIFF3 is the name of the diff3 program.
+With GNU diffutils, this is simply its user-visible diff3 program.
+But with traditional diff3 it is the name of the undocumented diff3 auxiliary,
+whose name is /usr/lib/diff3 or /usr/5lib/rdiff3prog or something similar.
+
+INSTALL is the command that installs commands, e.g. ‘../install-sh’.
+INSTALL_DATA installs data, and
+INSTALL_PROGRAM installs programs.
+
+SOELIM is the name of your soelim program.
+This is typically the standard one from groff.
+It is used only if you edit man/*.[15]in or make ‘maintainer-clean’.
+
+PIC is the name of your pic program, configured to avoid extensions
+so that a portable man page is generated.
+This is typically GNU pic with the ‘-n’ option,
+or traditional pic with ‘-D’.
+It is used only if you edit the documentation or make ‘maintainer-clean’.
+
+
+
+src/base.h notes
+================
+
+This section covers unusual situations requiring hand patches to src/base.h.
+
+bad_NFS_rename - Some buggy NFS file servers (e.g. some NAC releases)
+can report that rename(A,B) succeeded even though it failed.
+Set bad_NFS_rename to nonzero to work around the problem.
+Warning: the workaround introduces a rare race condition
+that can falsely report I/O errors;
+this is why the workaround is disabled unless you specify otherwise.
+
+has_NFS - Set this if the target host might use NFS.
+NFS's ``stateless server'' protocol has well-known problems with
+the non-idempotent operations link(2), rename(2), and unlink(2).
+For example, unlink(2) can run twice on the NFS server,
+causing the client to think that the unlink failed with errno==ENOENT.
+has_NFS enables code that works around these problems.
+However, has_NFS does not work around NFS implementation bugs;
+if your NFS implementation is buggy, get another!
+For example, make sure that your NFS uses UDP checksums, if it uses UDP.
+Modern systems checksum by default; ask your vendor if you're not sure.
+
+bad_NFS_rename - This should be 1 in SCO Unix V.3.2.  Its NFS rename(2) is broken,
+but if configure runs in a non-NFS file system, it thinks rename(2) works.
+
+TZ_must_be_set - set this to 1 on hosts where gmtime(3) yields bogus
+values unless the TZ environment variable is set.
+
+X_DEFAULT - This is normally ",v/" on Unix hosts, and "" on hosts that
+do not allow commas in file names (e.g. DOS).
+
+
+Copyright (C) 2010-2012 Thien-Thi Nguyen
+
+Copying and distribution of this file, with or without modification,
+are permitted provided the copyright notice and this notice are preserved.

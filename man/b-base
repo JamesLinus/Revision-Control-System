@@ -1,0 +1,4 @@
+.ds i \&\s-1ISO\s0
+.ds r \&\s-1RCS\s0
+.ds u \&\s-1UTC\s0
+.ds o \*r file

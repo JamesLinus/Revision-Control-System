@@ -1,0 +1,99 @@
+#!/bin/sh
+# Copyright (C) 2010-2012 Thien-Thi Nguyen
+#
+# This file is part of GNU RCS.
+#
+# GNU RCS is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GNU RCS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+: These two lines allow Org Mode to hide \
+* the code part of the file # (shell-script-mode)
+
+##
+# Usage: known-failures REL
+#
+# Display the list of tests that fail for REL on a single line.
+# This is intended for use as part of the value of ‘XFAIL_TESTS’
+# in a "make check" command, for example:
+#
+#   make check XFAIL_TESTS="`./known-failures 5.7`" \
+#              PATHPREFIX=/usr/bin
+#
+# In this example, /usr/bin is where RCS 5.7 was installed.
+# As a special case, if REL is ‘--list’, display instead
+# a list of releases in the internal database.
+##
+
+if [ x"$1" = x--help ] ; then
+    sed '/^##/,/^##/!d;/^##/d;s/^# //g;s/^#$//g' $0
+    exit 0
+fi
+
+if [ x"$1" = x--version ] ; then
+    echo "known-failures (GNU RCS) @PACKAGE_VERSION@"
+    exit 0
+fi
+
+if [ x"$1" = x--list ] ; then
+    sed '/^\* [0-9.]*$/!d;s/^..//' $0
+    exit 0
+fi
+
+if [ x"$1" = x ] ; then
+    echo "`basename $0`: missing arg (try --help)"
+    exit 1
+fi
+
+echo `sed '/^\* '$1'/,/^$/!d;/^\*/d;s/;.*//' $0`
+exit 0
+
+* maintenance instructions (org-mode)
+  The rest of the file lists tests known to fail by RCS release.
+  Each list should end with a blank line.  Comments begin with
+  semicolon and go to end of line.
+
+  Along with the test name, add some commentary explaining why
+  that test is known to fail for that release.
+
+  Use "make known-failures" to regenerate it from the .in file.
+
+  The next-up release should have an empty entry during development;
+  test failures should be maintained in Makefile.am, like so:
+    XFAIL_TESTS += tNNN
+  On release, any remaining failures should be moved to the .in file.
+  (Obviously, the ideal is to eliminate them prior to release.)
+
+* 5.7
+  t150 ; no ‘--version’ / ‘--help’
+  t300 ; trailing junk incorrectly ignored
+  t311 ; cannot handle [0-9]+ for state, author
+  t313 ; rlog omits trailing newline for midline description
+  t800 ; outdate everything leaves non-empty RCS file (fixed in 5.8)
+  t801 ; ‘ci -dYYYY-DOW’ => "invalid date/time format" (fixed in 5.8)
+  t802 ; ‘ci -dYYYY-wWW-D’ => "invalid date/time format" (fixed in 5.8)
+
+* 5.8
+  t150 ; super (new functionality in 5.9)
+  t320 ; ‘rlog -zLT’ => uninitialized ‘struct tm’ (fixed in 5.8.1)
+       ; NB: test fails reliably only for x86-64 -- YMMV!
+  t370 ; ‘rlog -dD1<D2’ => debugging output to stderr (fixed in 5.8.1)
+  t391 ; subversion style keywords (new functionality in 5.9)
+  t630 ; ‘co -S -l’ (new functionality in 5.9)
+  t810 ; ‘ci -l -d -T’ => RCS file mtime set to epoch (fixed in 5.8.1)
+
+* end matter
+*** Local variables:
+*** mode: org
+*** End:
+
+# known-failures ends here
